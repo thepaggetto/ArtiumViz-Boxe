@@ -91,6 +91,10 @@ router.get('/allmatch', async (req, res) => {
             CompetitionsLookupTable[comp.nome] = {
                 tipoGara: comp.tipoGara,
                 nomeCampionato: comp.nomeCampionato,
+                arbitro: comp.arbitro,
+                giudice1: comp.giudice1,
+                giudice2: comp.giudice2,
+                giudice3: comp.giudice3,
                 nomePL1: comp.nomePL1,
                 recordPL1: comp.recordPL1,
                 cittaPL1: comp.cittaPL1,
@@ -107,6 +111,8 @@ router.get('/allmatch', async (req, res) => {
                 etaPL2: comp.etaPL2,
                 pesoPL2: comp.pesoPL2,
                 altezzaPL2: comp.altezzaPL2,
+                imgAtleta1: comp.imgAtleta1,
+                imgAtleta2: comp.imgAtleta2,
             };
         });
 

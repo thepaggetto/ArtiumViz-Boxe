@@ -18,15 +18,15 @@ const HeaderMenu = () => {
                     ArtiumViz Boxe
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 2 }}>
-                    <Button color="inherit" component={Link} to="/">
-                        Dashboard
-                    </Button>
+                    {/*<Button color="inherit" component={Link} to="/">*/}
+                    {/*    Dashboard*/}
+                    {/*</Button>*/}
                     <Button color="inherit" component={Link} to="/competitions">
                         Gare
                     </Button>
-                    <Button color="inherit" component={Link} to="/settings">
-                        Impostazioni
-                    </Button>
+                    {/*<Button color="inherit" component={Link} to="/settings">*/}
+                    {/*    Impostazioni*/}
+                    {/*</Button>*/}
                     <Button color="inherit" onClick={handleLogout}>
                         Logout
                     </Button>

@@ -2,22 +2,34 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+
 const authRoutes = require('./routes/auth');
+const competitionsRouter = require('./routes/competitions');
+const uploadsRouter = require('./routes/uploads');
+
 const app = express();
 
-const competitionsRouter = require('./routes/competitions');
+// Verifica/crea la cartella "uploads/atleti"
+const uploadsAtletiDir = path.join(__dirname, 'uploads', 'atleti');
+if (!fs.existsSync(uploadsAtletiDir)) {
+    fs.mkdirSync(uploadsAtletiDir, { recursive: true });
+    console.log('Cartella "uploads/atleti" creata.');
+}
 
 // Middleware
-// Middleware per il parsing del JSON
+app.use(cors({ origin: 'http://localhost:3000' }));
 app.use(express.json());
 
-// Rotte di autenticazione
-
+// Rotte
 app.use('/api/auth', authRoutes);
-
-app.use(cors());
-app.use(express.json());
 app.use('/api/competitions', competitionsRouter);
+app.use('/api/uploads', uploadsRouter);
+
+// Serve i file statici dalla cartella "uploads"
+app.use('/uploads', express.static('uploads'));
+
 // Connessione al DB (ad es. MongoDB locale)
 mongoose.connect('mongodb://localhost:27017/competitiondb', {
     useNewUrlParser: true,
@@ -26,10 +38,5 @@ mongoose.connect('mongodb://localhost:27017/competitiondb', {
     .then(() => console.log('MongoDB connesso'))
     .catch(err => console.error(err));
 
-// Rotte
-app.use('/api/competitions', require('./routes/competitions'));
-
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server avviato sulla porta ${PORT}`));
-
-

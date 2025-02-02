@@ -16,11 +16,7 @@ const CodeSnippet = ({ code }) => {
                 variant="outlined"
                 rows={10}
             />
-            <CopyToClipboard text={code} onCopy={() => setCopied(true)}>
-                <Button variant="contained" color="primary" style={{ position: 'absolute', top: 10, right: 10 }}>
-                    {copied ? 'Copiato!' : 'Copia in Clipboard'}
-                </Button>
-            </CopyToClipboard>
+
         </Paper>
     );
 };

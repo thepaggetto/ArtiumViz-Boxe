@@ -1,3 +1,4 @@
+// frontend/src/components/CompetitionWizard.js
 import React, { useState } from 'react';
 import {
     TextField,
@@ -12,21 +13,34 @@ import {
     DialogContent,
     DialogContentText,
     DialogActions,
+    FormControlLabel,
+    Switch,
 } from '@mui/material';
 import InputMask from 'react-input-mask';
 import axios from 'axios';
 import countries from '../utils/countries';
 
 const CompetitionWizard = ({ competition, onSave }) => {
+    // Stati per i dialog
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [missingFieldsDialogOpen, setMissingFieldsDialogOpen] = useState(false);
+
+    // Stato del form
     const [formData, setFormData] = useState({
         nome: competition?.nome || '',
         tipoGara: competition?.tipoGara || '',
         nomeCampionato: competition?.nomeCampionato || '',
 
-        // Partecipante 1
+        // Nuovi campi
+        arbitro: competition?.arbitro || '',
+        giudice1: competition?.giudice1 || '',
+        giudice2: competition?.giudice2 || '',
+        giudice3: competition?.giudice3 || '',
+        // Flag per mostrare i giudici (non obbligatorio)
+        inserisciGiudici: competition?.inserisciGiudici || false,
+
+        // Dati Partecipante 1
         nomePL1: competition?.nomePL1 || '',
         recordPL1: competition?.recordPL1 || '0W-0L-0D',
         cittaPL1: competition?.cittaPL1 || '',
@@ -36,7 +50,7 @@ const CompetitionWizard = ({ competition, onSave }) => {
         pesoPL1: competition?.pesoPL1 || '000,000KG',
         altezzaPL1: competition?.altezzaPL1 || '000,000cm',
 
-        // Partecipante 2
+        // Dati Partecipante 2
         nomePL2: competition?.nomePL2 || '',
         recordPL2: competition?.recordPL2 || '0W-0L-0D',
         cittaPL2: competition?.cittaPL2 || '',
@@ -45,6 +59,10 @@ const CompetitionWizard = ({ competition, onSave }) => {
         etaPL2: competition?.etaPL2 || '',
         pesoPL2: competition?.pesoPL2 || '000,000KG',
         altezzaPL2: competition?.altezzaPL2 || '000,000cm',
+
+        // Campi per upload immagine (URL)
+        imgAtleta1: competition?.imgAtleta1 || '',
+        imgAtleta2: competition?.imgAtleta2 || '',
     });
 
     const [errors, setErrors] = useState({
@@ -52,9 +70,8 @@ const CompetitionWizard = ({ competition, onSave }) => {
         recordPL2: '',
     });
 
-    // Regex per validare il formato record (numW-numL-numD)
+    // Regex per validare il formato record: numW-numL-numD
     const recordRegex = /^\d+W-\d+L-\d+D$/;
-
     const validateRecord = (record) => recordRegex.test(record);
 
     const handleCountryChange = (field, svgField) => (event) => {
@@ -66,23 +83,53 @@ const CompetitionWizard = ({ competition, onSave }) => {
         });
     };
 
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Funzione per gestire l'upload
+    const handleImageUpload = async (e, fieldName) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        // Crea un oggetto FormData
+        const formDataUpload = new FormData();
+        formDataUpload.append('image', file);
 
-        // Rimuovo errori di validazione se l'utente modifica i campi record
-        if (e.target.name === 'recordPL1' && errors.recordPL1) {
+        try {
+            // Effettua la richiesta di upload
+            const res = await axios.post('http://localhost:5000/api/uploads/image', formDataUpload, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            // Aggiorna il campo immagine con l'URL ricevuto
+            setFormData((prev) => ({ ...prev, [fieldName]: res.data.url }));
+        } catch (error) {
+            console.error('Errore durante l\'upload:', error);
+            alert('Errore durante l\'upload dell\'immagine');
+        }
+    };
+
+        const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+        // Se il campo record viene modificato, rimuovo eventuali errori
+        if (name === 'recordPL1' && errors.recordPL1) {
             setErrors((prev) => ({ ...prev, recordPL1: '' }));
         }
-        if (e.target.name === 'recordPL2' && errors.recordPL2) {
+        if (name === 'recordPL2' && errors.recordPL2) {
             setErrors((prev) => ({ ...prev, recordPL2: '' }));
         }
     };
 
+    // Gestione del toggle per mostrare i campi dei giudici
+    const handleToggleGiudici = (e) => {
+        setFormData({ ...formData, inserisciGiudici: e.target.checked });
+    };
+
     const validateRequiredFields = () => {
+        // I campi giudici non sono obbligatori
         const requiredFields = [
             'nome',
             'tipoGara',
             'nomeCampionato',
+            'arbitro',
             'nomePL1',
             'recordPL1',
             'cittaPL1',
@@ -99,6 +146,8 @@ const CompetitionWizard = ({ competition, onSave }) => {
             'etaPL2',
             'pesoPL2',
             'altezzaPL2',
+            'imgAtleta1',
+            'imgAtleta2',
         ];
         for (const field of requiredFields) {
             if (!formData[field] || formData[field].trim() === '') {
@@ -109,13 +158,11 @@ const CompetitionWizard = ({ competition, onSave }) => {
     };
 
     const handleSubmit = async () => {
-        // 1) Controlla campi obbligatori
         if (!validateRequiredFields()) {
             setMissingFieldsDialogOpen(true);
             return;
         }
 
-        // 2) Validazione record
         let hasError = false;
         if (!validateRecord(formData.recordPL1)) {
             setErrors((prev) => ({
@@ -133,7 +180,6 @@ const CompetitionWizard = ({ competition, onSave }) => {
         }
         if (hasError) return;
 
-        // 3) Salvataggio effettivo
         try {
             if (competition && competition._id) {
                 const res = await axios.put(`/api/competitions/${competition._id}`, formData);
@@ -147,12 +193,11 @@ const CompetitionWizard = ({ competition, onSave }) => {
         }
     };
 
-    // Mostra la dialog per eliminare la gara
-    const handleDelete = () => {
+    const handleDelete = async () => {
+        // Apri il dialog per confermare l'eliminazione
         setDeleteDialogOpen(true);
     };
 
-    // Conferma eliminazione
     const handleConfirmDelete = async () => {
         setDeleteDialogOpen(false);
         try {
@@ -163,12 +208,11 @@ const CompetitionWizard = ({ competition, onSave }) => {
         }
     };
 
-    // Annulla eliminazione
     const handleCloseDeleteDialog = () => {
         setDeleteDialogOpen(false);
     };
 
-    // Indietro: chiedi conferma di scartare i dati
+    // Gestione annullamento/indietro
     const handleCancel = () => {
         setCancelDialogOpen(true);
     };
@@ -182,13 +226,14 @@ const CompetitionWizard = ({ competition, onSave }) => {
         setCancelDialogOpen(false);
         setMissingFieldsDialogOpen(false);
     };
+
     return (
         <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
                 {competition && competition._id ? 'Modifica Match' : 'Crea Match'}
             </Typography>
 
-            {/* Sezione 1: Nome Match, Tipo, Titolo Campionato */}
+            {/* Sezione 1: Nome Match, Tipo, Titolo Campionato, Arbitro */}
             <Grid container spacing={2} sx={{ mb: 2 }}>
                 <Grid item xs={12} sm={6}>
                     <TextField
@@ -220,19 +265,80 @@ const CompetitionWizard = ({ competition, onSave }) => {
                         onChange={handleChange}
                     />
                 </Grid>
+                <Grid item xs={12}>
+                    <TextField
+                        label="Arbitro"
+                        name="arbitro"
+                        required
+                        fullWidth
+                        value={formData.arbitro}
+                        onChange={handleChange}
+                    />
+                </Grid>
             </Grid>
 
             <Divider sx={{ my: 2 }} />
 
-            {/* Sezione 2: Dati PL1 */}
-            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-                Dati Pugile 1
-            </Typography>
+            {/* Sezione 2: Flag per mostrare i campi dei giudici */}
+            <Grid container spacing={2} sx={{ mb: 2 }}>
+                <Grid item xs={12}>
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={formData.inserisciGiudici}
+                                onChange={handleToggleGiudici}
+                                name="inserisciGiudici"
+                                color="primary"
+                            />
+                        }
+                        label="Inserisci Giudici"
+                    />
+                </Grid>
+            </Grid>
 
+            {/* Sezione 2 (condizionale): Dati Giudici */}
+            {formData.inserisciGiudici && (
+                <Grid container spacing={2} sx={{ mb: 2 }}>
+                    <Grid item xs={12} sm={4}>
+                        <TextField
+                            label="Giudice 1"
+                            name="giudice1"
+                            fullWidth
+                            value={formData.giudice1}
+                            onChange={handleChange}
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                        <TextField
+                            label="Giudice 2"
+                            name="giudice2"
+                            fullWidth
+                            value={formData.giudice2}
+                            onChange={handleChange}
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                        <TextField
+                            label="Giudice 3"
+                            name="giudice3"
+                            fullWidth
+                            value={formData.giudice3}
+                            onChange={handleChange}
+                        />
+                    </Grid>
+                </Grid>
+            )}
+
+            <Divider sx={{ my: 2 }} />
+
+            {/* Sezione 3: Dati Partecipante 1 */}
+            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
+                Dati Partecipante 1
+            </Typography>
             <Grid container spacing={2} sx={{ mb: 2 }}>
                 <Grid item xs={12} sm={6}>
                     <TextField
-                        label="Nome e Cognome | Pugile 1"
+                        label="Nome Atleta 1"
                         name="nomePL1"
                         required
                         fullWidth
@@ -242,7 +348,7 @@ const CompetitionWizard = ({ competition, onSave }) => {
                 </Grid>
                 <Grid item xs={12} sm={6}>
                     <TextField
-                        label="Record (es. 0W-0L-0D)"
+                        label="Record PL1 (es. 0W-0L-0D)"
                         name="recordPL1"
                         required
                         fullWidth
@@ -254,7 +360,7 @@ const CompetitionWizard = ({ competition, onSave }) => {
                 </Grid>
                 <Grid item xs={12} sm={4}>
                     <TextField
-                        label="Città"
+                        label="Città PL1"
                         name="cittaPL1"
                         required
                         fullWidth
@@ -265,7 +371,7 @@ const CompetitionWizard = ({ competition, onSave }) => {
                 <Grid item xs={12} sm={4}>
                     <TextField
                         select
-                        label="Nazionalità"
+                        label="Nazionalità PL1"
                         name="nazionalitaPL1"
                         required
                         fullWidth
@@ -287,12 +393,10 @@ const CompetitionWizard = ({ competition, onSave }) => {
                         <img src={formData.svgPL1} alt="flag" width="30" />
                     )}
                 </Grid>
-
-                {/* Età: campo numerico */}
                 <Grid item xs={12} sm={4}>
                     <TextField
                         type="number"
-                        label="Età"
+                        label="Età PL1"
                         name="etaPL1"
                         required
                         fullWidth
@@ -300,8 +404,6 @@ const CompetitionWizard = ({ competition, onSave }) => {
                         onChange={handleChange}
                     />
                 </Grid>
-
-                {/* Peso con InputMask per 000,000KG */}
                 <Grid item xs={12} sm={4}>
                     <InputMask
                         mask="999,999KG"
@@ -313,15 +415,13 @@ const CompetitionWizard = ({ competition, onSave }) => {
                         {(inputProps) => (
                             <TextField
                                 {...inputProps}
-                                label="Peso (000,000KG)"
+                                label="Peso PL1 (000,000KG)"
                                 required
                                 fullWidth
                             />
                         )}
                     </InputMask>
                 </Grid>
-
-                {/* Altezza con InputMask per 000,000cm */}
                 <Grid item xs={12} sm={4}>
                     <InputMask
                         mask="999,999cm"
@@ -333,7 +433,7 @@ const CompetitionWizard = ({ competition, onSave }) => {
                         {(inputProps) => (
                             <TextField
                                 {...inputProps}
-                                label="Altezza (000,000cm)"
+                                label="Altezza PL1 (000,000cm)"
                                 required
                                 fullWidth
                             />
@@ -344,15 +444,14 @@ const CompetitionWizard = ({ competition, onSave }) => {
 
             <Divider sx={{ my: 2 }} />
 
-            {/* Sezione 3: Dati PL2 */}
+            {/* Sezione 4: Dati Partecipante 2 */}
             <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-                Dati Pugile 2
+                Dati Partecipante 2
             </Typography>
-
             <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
                     <TextField
-                        label="Nome Nome e Cognome | Pugile 2"
+                        label="Nome Atleta 2"
                         name="nomePL2"
                         required
                         fullWidth
@@ -362,7 +461,7 @@ const CompetitionWizard = ({ competition, onSave }) => {
                 </Grid>
                 <Grid item xs={12} sm={6}>
                     <TextField
-                        label="Record (es. 0W-0L-0D)"
+                        label="Record PL2 (es. 0W-0L-0D)"
                         name="recordPL2"
                         required
                         fullWidth
@@ -374,7 +473,7 @@ const CompetitionWizard = ({ competition, onSave }) => {
                 </Grid>
                 <Grid item xs={12} sm={4}>
                     <TextField
-                        label="Città"
+                        label="Città PL2"
                         name="cittaPL2"
                         required
                         fullWidth
@@ -385,7 +484,7 @@ const CompetitionWizard = ({ competition, onSave }) => {
                 <Grid item xs={12} sm={4}>
                     <TextField
                         select
-                        label="Nazionalità"
+                        label="Nazionalità PL2"
                         name="nazionalitaPL2"
                         required
                         fullWidth
@@ -407,12 +506,10 @@ const CompetitionWizard = ({ competition, onSave }) => {
                         <img src={formData.svgPL2} alt="flag" width="30" />
                     )}
                 </Grid>
-
-                {/* Età: campo numerico */}
                 <Grid item xs={12} sm={4}>
                     <TextField
                         type="number"
-                        label="Età"
+                        label="Età PL2"
                         name="etaPL2"
                         required
                         fullWidth
@@ -420,8 +517,6 @@ const CompetitionWizard = ({ competition, onSave }) => {
                         onChange={handleChange}
                     />
                 </Grid>
-
-                {/* Peso con InputMask per 000,999KG */}
                 <Grid item xs={12} sm={4}>
                     <InputMask
                         mask="999,999KG"
@@ -433,15 +528,13 @@ const CompetitionWizard = ({ competition, onSave }) => {
                         {(inputProps) => (
                             <TextField
                                 {...inputProps}
-                                label="Peso (000,000KG)"
+                                label="Peso PL2 (000,000KG)"
                                 required
                                 fullWidth
                             />
                         )}
                     </InputMask>
                 </Grid>
-
-                {/* Altezza con InputMask per 000,999cm */}
                 <Grid item xs={12} sm={4}>
                     <InputMask
                         mask="999,999cm"
@@ -453,7 +546,7 @@ const CompetitionWizard = ({ competition, onSave }) => {
                         {(inputProps) => (
                             <TextField
                                 {...inputProps}
-                                label="Altezza (000,000cm)"
+                                label="Altezza PL2 (000,000cm)"
                                 required
                                 fullWidth
                             />
@@ -462,7 +555,67 @@ const CompetitionWizard = ({ competition, onSave }) => {
                 </Grid>
             </Grid>
 
-            {/* Pulsanti Crea/Aggiorna + Indietro + Elimina */}
+            {/* Sezione per l'upload delle immagini degli atleti */}
+            <Divider sx={{ my: 2 }} />
+            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
+                Immagini Atleti
+            </Typography>
+            <Grid container spacing={2} sx={{ mb: 2 }}>
+                {/* Immagine Atleta 1 */}
+                <Grid item xs={12} sm={6}>
+                    <TextField
+                        label="Immagine Atleta 1 (URL)"
+                        name="imgAtleta1"
+                        fullWidth
+                        value={formData.imgAtleta1}
+                        onChange={(e) =>
+                            setFormData({ ...formData, imgAtleta1: e.target.value })
+                        }
+                    />
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, 'imgAtleta1')}
+                        style={{ marginTop: 8 }}
+                    />
+                </Grid>
+                <Grid item xs={12} sm={6} sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Button
+                        variant="contained"
+                        onClick={() => navigator.clipboard.writeText(formData.imgAtleta1)}
+                    >
+                        Copia link immagine 1
+                    </Button>
+                </Grid>
+                {/* Immagine Atleta 2 */}
+                <Grid item xs={12} sm={6}>
+                    <TextField
+                        label="Immagine Atleta 2 (URL)"
+                        name="imgAtleta2"
+                        fullWidth
+                        value={formData.imgAtleta2}
+                        onChange={(e) =>
+                            setFormData({ ...formData, imgAtleta2: e.target.value })
+                        }
+                    />
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, 'imgAtleta2')}
+                        style={{ marginTop: 8 }}
+                    />
+                </Grid>
+                <Grid item xs={12} sm={6} sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Button
+                        variant="contained"
+                        onClick={() => navigator.clipboard.writeText(formData.imgAtleta2)}
+                    >
+                        Copia link immagine 2
+                    </Button>
+                </Grid>
+            </Grid>
+
+            {/* Pulsanti: Salva / Elimina / Indietro */}
             <Grid container spacing={2} sx={{ mt: 2 }}>
                 {competition && competition._id ? (
                     <>
@@ -477,7 +630,11 @@ const CompetitionWizard = ({ competition, onSave }) => {
                             </Button>
                         </Grid>
                         <Grid item>
-                            <Button variant="text" color="inherit" onClick={() => setCancelDialogOpen(true)}>
+                            <Button
+                                variant="text"
+                                color="inherit"
+                                onClick={() => setCancelDialogOpen(true)}
+                            >
                                 Indietro
                             </Button>
                         </Grid>
@@ -490,7 +647,11 @@ const CompetitionWizard = ({ competition, onSave }) => {
                             </Button>
                         </Grid>
                         <Grid item>
-                            <Button variant="text" color="inherit" onClick={() => setCancelDialogOpen(true)}>
+                            <Button
+                                variant="text"
+                                color="inherit"
+                                onClick={() => setCancelDialogOpen(true)}
+                            >
                                 Indietro
                             </Button>
                         </Grid>
@@ -498,9 +659,15 @@ const CompetitionWizard = ({ competition, onSave }) => {
                 )}
             </Grid>
 
-            {/* Dialog per Annullare l’inserimento o l’editing */}
-            <Dialog open={cancelDialogOpen} onClose={() => setCancelDialogOpen(false)}>
-                <DialogTitle>Annullare l'inserimento?</DialogTitle>
+            {/* Dialog per annullare l'inserimento */}
+            <Dialog
+                open={cancelDialogOpen}
+                onClose={() => setCancelDialogOpen(false)}
+                aria-labelledby="cancel-dialog-title"
+            >
+                <DialogTitle id="cancel-dialog-title">
+                    Annullare l'inserimento?
+                </DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         Sei sicuro di voler uscire senza salvare i dati?
@@ -508,15 +675,25 @@ const CompetitionWizard = ({ competition, onSave }) => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setCancelDialogOpen(false)}>Annulla</Button>
-                    <Button onClick={() => { setCancelDialogOpen(false); onSave(null); }} color="error">
+                    <Button
+                        onClick={() => {
+                            setCancelDialogOpen(false);
+                            onSave(null);
+                        }}
+                        color="error"
+                    >
                         Sì, esci
                     </Button>
                 </DialogActions>
             </Dialog>
 
-            {/* Dialog per confermare l'eliminazione */}
-            <Dialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog}>
-                <DialogTitle>Eliminare Gara?</DialogTitle>
+            {/* Dialog per eliminazione */}
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={handleCloseDeleteDialog}
+                aria-labelledby="delete-dialog-title"
+            >
+                <DialogTitle id="delete-dialog-title">Eliminare Gara?</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         Questa operazione rimuoverà la gara in modo definitivo.
@@ -534,12 +711,14 @@ const CompetitionWizard = ({ competition, onSave }) => {
             <Dialog
                 open={missingFieldsDialogOpen}
                 onClose={() => setMissingFieldsDialogOpen(false)}
+                aria-labelledby="missing-fields-dialog-title"
             >
-                <DialogTitle>Campi Obbligatori</DialogTitle>
+                <DialogTitle id="missing-fields-dialog-title">
+                    Campi Obbligatori
+                </DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Non hai compilato tutti i campi obbligatori.
-                        Per continuare, inserisci tutte le informazioni richieste.
+                        Non hai compilato tutti i campi obbligatori. Inserisci tutte le informazioni richieste per continuare.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>

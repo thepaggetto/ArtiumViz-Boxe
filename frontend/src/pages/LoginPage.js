@@ -18,7 +18,7 @@ const LoginPage = () => {
             // Salva il token (o altri dati utente) in localStorage
             localStorage.setItem('token', token);
             // Reindirizza l'utente alla dashboard (o a un'altra pagina protetta)
-            navigate('/');
+            navigate('/competitions');
         } catch (err) {
             setError(err.response?.data?.message || 'Login failed. Check your credentials.');
         }

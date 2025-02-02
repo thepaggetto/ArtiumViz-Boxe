@@ -7,6 +7,8 @@ import {
     ListItem,
     ListItemText,
     IconButton,
+    Divider,
+    Box,
 } from '@mui/material';
 import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
 import axios from 'axios';
@@ -25,6 +27,7 @@ const CompetitionList = () => {
     const [competitions, setCompetitions] = useState([]);
     const [editing, setEditing] = useState(null); // gara in modifica
     const [jsonOutput, setJsonOutput] = useState('');
+    const [showSnippet, setShowSnippet] = useState(false);
 
     useEffect(() => {
         fetchCompetitions();
@@ -83,8 +86,6 @@ const CompetitionList = () => {
             }));
             // Chiamata POST a /api/competitions/reorder
             await axios.post('/api/competitions/reorder', orderData);
-
-            // Aggiorna lo stato e il JSON
             setCompetitions(newOrder);
             generateOutput(newOrder);
         } catch (error) {
@@ -95,7 +96,6 @@ const CompetitionList = () => {
     const moveUp = (index) => {
         if (index === 0) return; // non possiamo andare più su
         const newOrder = moveItem(competitions, index, index - 1);
-        // Salva l'ordine persistente
         saveNewOrder(newOrder);
     };
 
@@ -119,10 +119,7 @@ const CompetitionList = () => {
                                 onClick={() => setEditing(comp)}
                                 sx={{ display: 'flex', justifyContent: 'space-between' }}
                             >
-                                <ListItemText
-                                    primary={comp.nome}
-                                    secondary={comp.tipoGara}
-                                />
+                                <ListItemText primary={comp.nome} secondary={comp.tipoGara} />
                                 <div>
                                     <IconButton
                                         onClick={(e) => {
@@ -154,8 +151,29 @@ const CompetitionList = () => {
                 </Paper>
             )}
 
-            <Typography variant="h6">Output JSON per Singular.Live</Typography>
-            <CodeSnippet code={jsonOutput} />
+            {/* Sezione per il JSON snippet: pulsanti e output */}
+            <Box sx={{ mt: 4 }}>
+                <Typography variant="h6" gutterBottom>
+                    Output JSON
+                </Typography>
+                <Box sx={{ mb: 2 }}>
+                    <Button
+                        variant="outlined"
+                        onClick={() => setShowSnippet(!showSnippet)}
+                        sx={{ mr: 2 }}
+                    >
+                        {showSnippet ? 'Nascondi Snippet JSON' : 'Mostra Snippet JSON'}
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => navigator.clipboard.writeText(jsonOutput)}
+                    >
+                        Copia in clipboard
+                    </Button>
+                </Box>
+                {showSnippet && <CodeSnippet code={jsonOutput} />}
+            </Box>
         </div>
     );
 };
