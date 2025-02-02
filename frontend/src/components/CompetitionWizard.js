@@ -20,6 +20,8 @@ import InputMask from 'react-input-mask';
 import axios from 'axios';
 import countries from '../utils/countries';
 
+const API_URL = process.env.REACT_APP_API_URL || 'https://api.artiumviz.com';
+
 const CompetitionWizard = ({ competition, onSave }) => {
     // Stati per i dialog
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
@@ -93,7 +95,7 @@ const CompetitionWizard = ({ competition, onSave }) => {
 
         try {
             // Effettua la richiesta di upload
-            const res = await axios.post('http://localhost:5000/api/uploads/image', formDataUpload, {
+            const res = await axios.post(`${API_URL}/api/uploads/image`, formDataUpload, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -106,7 +108,7 @@ const CompetitionWizard = ({ competition, onSave }) => {
         }
     };
 
-        const handleChange = (e) => {
+    const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
         // Se il campo record viene modificato, rimuovo eventuali errori
@@ -146,8 +148,7 @@ const CompetitionWizard = ({ competition, onSave }) => {
             'etaPL2',
             'pesoPL2',
             'altezzaPL2',
-            'imgAtleta1',
-            'imgAtleta2',
+
         ];
         for (const field of requiredFields) {
             if (!formData[field] || formData[field].trim() === '') {
@@ -182,10 +183,10 @@ const CompetitionWizard = ({ competition, onSave }) => {
 
         try {
             if (competition && competition._id) {
-                const res = await axios.put(`/api/competitions/${competition._id}`, formData);
+                const res = await axios.put(`${API_URL}/api/competitions/${competition._id}`, formData);
                 onSave(res.data);
             } else {
-                const res = await axios.post('/api/competitions', formData);
+                const res = await axios.post(`${API_URL}/api/competitions`, formData);
                 onSave(res.data);
             }
         } catch (error) {

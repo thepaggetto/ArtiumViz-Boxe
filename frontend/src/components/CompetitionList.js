@@ -7,8 +7,9 @@ import {
     ListItem,
     ListItemText,
     IconButton,
-    Divider,
     Box,
+    CircularProgress,
+    Alert
 } from '@mui/material';
 import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
 import axios from 'axios';
@@ -25,22 +26,30 @@ function moveItem(list, fromIndex, toIndex) {
 
 const CompetitionList = () => {
     const [competitions, setCompetitions] = useState([]);
-    const [editing, setEditing] = useState(null); // gara in modifica
+    const [editing, setEditing] = useState(null); // Gara in modifica
     const [jsonOutput, setJsonOutput] = useState('');
     const [showSnippet, setShowSnippet] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         fetchCompetitions();
     }, []);
 
     const fetchCompetitions = async () => {
+        setLoading(true);
+        setError(null);
         try {
-            // GET con sort({ sortIndex: 1 }) lato server
-            const res = await axios.get('/api/competitions');
-            setCompetitions(res.data);
-            generateOutput(res.data);
+            const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/competitions`);
+            const data = Array.isArray(res.data) ? res.data : [];
+            setCompetitions(data);
+            generateOutput(data);
         } catch (err) {
-            console.error(err);
+            console.error('Errore nel recupero delle competizioni:', err);
+            setError('Errore nel recupero delle competizioni.');
+            setCompetitions([]);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -58,6 +67,7 @@ const CompetitionList = () => {
                 etaPL1: comp.etaPL1,
                 pesoPL1: comp.pesoPL1,
                 altezzaPL1: comp.altezzaPL1,
+                imgAtleta1: comp.imgAtleta1,
                 nomePL2: comp.nomePL2,
                 recordPL2: comp.recordPL2,
                 cittaPL2: comp.cittaPL2,
@@ -66,6 +76,11 @@ const CompetitionList = () => {
                 etaPL2: comp.etaPL2,
                 pesoPL2: comp.pesoPL2,
                 altezzaPL2: comp.altezzaPL2,
+                imgAtleta2: comp.imgAtleta2,
+                arbitro: comp.arbitro || '',
+                giudice1: comp.giudice1 || '',
+                giudice2: comp.giudice2 || '',
+                giudice3: comp.giudice3 || '',
             };
         });
         setJsonOutput(JSON.stringify(output, null, 2));
@@ -79,13 +94,11 @@ const CompetitionList = () => {
     // Funzione per salvare il nuovo ordine al server
     const saveNewOrder = async (newOrder) => {
         try {
-            // Prepara l'array di { _id, sortIndex }
             const orderData = newOrder.map((comp, idx) => ({
                 _id: comp._id,
                 sortIndex: idx,
             }));
-            // Chiamata POST a /api/competitions/reorder
-            await axios.post('/api/competitions/reorder', orderData);
+            await axios.post(`${process.env.REACT_APP_API_URL}/api/competitions/reorder`, orderData);
             setCompetitions(newOrder);
             generateOutput(newOrder);
         } catch (error) {
@@ -94,13 +107,13 @@ const CompetitionList = () => {
     };
 
     const moveUp = (index) => {
-        if (index === 0) return; // non possiamo andare più su
+        if (index === 0) return;
         const newOrder = moveItem(competitions, index, index - 1);
         saveNewOrder(newOrder);
     };
 
     const moveDown = (index) => {
-        if (index === competitions.length - 1) return; // ultimo elemento, non può scendere
+        if (index === competitions.length - 1) return;
         const newOrder = moveItem(competitions, index, index + 1);
         saveNewOrder(newOrder);
     };
@@ -110,51 +123,72 @@ const CompetitionList = () => {
             {editing ? (
                 <CompetitionWizard competition={editing} onSave={handleSave} />
             ) : (
-                <Paper style={{ padding: 20, marginBottom: 20 }}>
-                    <List>
-                        {competitions.map((comp, index) => (
-                            <ListItem
-                                key={comp._id}
-                                button
-                                onClick={() => setEditing(comp)}
-                                sx={{ display: 'flex', justifyContent: 'space-between' }}
-                            >
-                                <ListItemText primary={comp.nome} secondary={comp.tipoGara} />
-                                <div>
-                                    <IconButton
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            moveUp(index);
-                                        }}
-                                        size="small"
-                                        disabled={index === 0}
-                                    >
-                                        <ArrowUpward />
-                                    </IconButton>
-                                    <IconButton
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            moveDown(index);
-                                        }}
-                                        size="small"
-                                        disabled={index === competitions.length - 1}
-                                    >
-                                        <ArrowDownward />
-                                    </IconButton>
-                                </div>
-                            </ListItem>
-                        ))}
-                    </List>
-                    <Button variant="contained" onClick={() => setEditing({})}>
-                        Nuovo Match
-                    </Button>
+                <Paper sx={{ padding: 3, marginBottom: 3 }}>
+                    <Typography variant="h5" gutterBottom>
+                        Lista Competizioni
+                    </Typography>
+
+                    {loading ? (
+                        <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: 200 }}>
+                            <CircularProgress />
+                        </Box>
+                    ) : error ? (
+                        <Alert severity="error">{error}</Alert>
+                    ) : (
+                        <>
+                            <List>
+                                {competitions.length > 0 ? (
+                                    competitions.map((comp, index) => (
+                                        <ListItem
+                                            key={comp._id}
+                                            button
+                                            onClick={() => setEditing(comp)}
+                                            sx={{ display: 'flex', justifyContent: 'space-between' }}
+                                        >
+                                            <ListItemText primary={comp.nome} secondary={comp.tipoGara} />
+                                            <div>
+                                                <IconButton
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        moveUp(index);
+                                                    }}
+                                                    size="small"
+                                                    disabled={index === 0}
+                                                >
+                                                    <ArrowUpward />
+                                                </IconButton>
+                                                <IconButton
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        moveDown(index);
+                                                    }}
+                                                    size="small"
+                                                    disabled={index === competitions.length - 1}
+                                                >
+                                                    <ArrowDownward />
+                                                </IconButton>
+                                            </div>
+                                        </ListItem>
+                                    ))
+                                ) : (
+                                    <Typography variant="body1" sx={{ textAlign: 'center', padding: 2 }}>
+                                        Nessuna competizione disponibile.
+                                    </Typography>
+                                )}
+                            </List>
+
+                            <Button variant="contained" onClick={() => setEditing({})} sx={{ mt: 2 }}>
+                                Nuovo Match
+                            </Button>
+                        </>
+                    )}
                 </Paper>
             )}
 
-            {/* Sezione per il JSON snippet: pulsanti e output */}
+            {/* Sezione per il JSON snippet */}
             <Box sx={{ mt: 4 }}>
                 <Typography variant="h6" gutterBottom>
-                    Output JSON
+                    Output JSON per Singular.Live
                 </Typography>
                 <Box sx={{ mb: 2 }}>
                     <Button
