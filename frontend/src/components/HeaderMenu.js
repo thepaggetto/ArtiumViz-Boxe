@@ -14,19 +14,20 @@ const HeaderMenu = () => {
     return (
         <AppBar position="static">
             <Toolbar>
-                <Typography variant="h6" sx={{ flexGrow: 1 }}>
-                    ArtiumViz Boxe
-                </Typography>
+                {/* Box per logo e titolo */}
+                <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+                    {/* Logo: il file deve essere in public/logo.svg */}
+                    <img
+                        src="/Logo_AV_Boxeav.svg"  //
+                        alt="ArtiumViz Boxe Logo"
+                        style={{ maxHeight: '50px', marginRight: '10px', marginBottom: '2px' }}
+                    />
+
+                </Box>
                 <Box sx={{ display: 'flex', gap: 2 }}>
-                    {/*<Button color="inherit" component={Link} to="/">*/}
-                    {/*    Dashboard*/}
-                    {/*</Button>*/}
                     <Button color="inherit" component={Link} to="/competitions">
                         Gare
                     </Button>
-                    {/*<Button color="inherit" component={Link} to="/settings">*/}
-                    {/*    Impostazioni*/}
-                    {/*</Button>*/}
                     <Button color="inherit" onClick={handleLogout}>
                         Logout
                     </Button>

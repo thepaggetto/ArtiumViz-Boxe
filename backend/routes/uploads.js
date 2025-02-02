@@ -8,7 +8,7 @@ const router = express.Router(); // <--- Assicurati di definire il router
 // Configurazione di Multer per salvare i file nella cartella "uploads"
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'uploads/atleti/'); // Assicurati che la cartella "uploads" esista
+        cb(null, process.env.UPLOADS_DIR || 'uploads/atleti/');
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);

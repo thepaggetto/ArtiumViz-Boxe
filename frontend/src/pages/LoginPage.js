@@ -13,7 +13,8 @@ const LoginPage = () => {
         event.preventDefault();
         try {
             // Effettua la chiamata al backend per il login
-            const response = await axios.post('/api/auth/login', { email, password });
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/login`, { email, password })
+
             const token = response.data.token;
             // Salva il token (o altri dati utente) in localStorage
             localStorage.setItem('token', token);
@@ -35,6 +36,14 @@ const LoginPage = () => {
                     boxShadow: 2,
                 }}
             >
+                {/* Inserisci il logo qui */}
+                <Box sx={{ textAlign: 'center', mb: 2 }}>
+                    <img
+                        src="/Logo_AV_Boxeav.svg"  // Questo punta al file nella cartella public
+                        alt="Logo ArtiumViz"
+                        style={{ maxWidth: '200px' }}
+                    />
+                </Box>
                 <Typography variant="h4" component="h1" gutterBottom>
                     Login
                 </Typography>

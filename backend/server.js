@@ -19,7 +19,7 @@ if (!fs.existsSync(uploadsAtletiDir)) {
 }
 
 // Middleware
-app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(cors({  origin: process.env.FRONTEND_URL || 'http://localhost:3000' }));
 app.use(express.json());
 
 // Rotte
@@ -28,7 +28,7 @@ app.use('/api/competitions', competitionsRouter);
 app.use('/api/uploads', uploadsRouter);
 
 // Serve i file statici dalla cartella "uploads"
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static(process.env.UPLOADS_DIR || 'uploads/atleti'));
 
 // Connessione al DB (ad es. MongoDB locale)
 mongoose.connect('mongodb://localhost:27017/competitiondb', {
