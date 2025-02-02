@@ -12,7 +12,8 @@ const competitionsRouter = require('./routes/competitions');
 app.use(express.json());
 
 // Rotte di autenticazione
-app.use('/api', authRoutes);
+
+app.use('/api/auth', authRoutes);
 
 app.use(cors());
 app.use(express.json());

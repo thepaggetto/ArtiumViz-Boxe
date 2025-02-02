@@ -13,7 +13,7 @@ const LoginPage = () => {
         event.preventDefault();
         try {
             // Effettua la chiamata al backend per il login
-            const response = await axios.post('/api/login', { email, password });
+            const response = await axios.post('/api/auth/login', { email, password });
             const token = response.data.token;
             // Salva il token (o altri dati utente) in localStorage
             localStorage.setItem('token', token);
