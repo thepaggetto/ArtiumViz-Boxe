@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 522.99 166.24">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #bc3943;
+      }
+
+      .cls-2 {
+        font-family: AeionMono-SemiBold, 'Aeion Mono';
+        font-size: 75.59px;
+        font-weight: 600;
+        letter-spacing: -.04em;
+      }
+
+      .cls-3 {
+        font-family: Bahnschrift-Light, Bahnschrift;
+        font-size: 30.65px;
+        font-variation-settings: 'wght' 300, 'wdth' 100;
+        font-weight: 300;
+      }
+
+      .cls-4 {
+        letter-spacing: -.05em;
+      }
+
+      .cls-5 {
+        letter-spacing: -.04em;
+      }
+    </style>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g>
+      <path class="cls-1" d="M116.94,140.76l8.98-21.19-21.32-65.66,18.15-34.4L107.8.06l-37.75-.06-23.88,53.73,29.29,87.04h41.48ZM51.21,78.37l-37.1.02L.03,96.62l-.03.78,14.75,43.36,41.49-.38,8.9-20.62-13.93-41.39Z"/>
+      <text class="cls-2" transform="translate(136.6 124.89)"><tspan x="0" y="0">ArtiumViz</tspan></text>
+      <text class="cls-3" transform="translate(143.09 157.95)"><tspan class="cls-5" x="0" y="0">B</tspan><tspan class="cls-4" x="18.68" y="0">ox</tspan><tspan class="cls-5" x="48.13" y="0">e</tspan></text>
+    </g>
+  </g>
+</svg>
